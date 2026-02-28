@@ -2,8 +2,6 @@
 
 ## RDP
 ### Генерация сертификата
-
-
 PowerShell (admin)
 ```powershell
 sertlm.msc
@@ -31,10 +29,18 @@ Get-ChildItem Cert:\LocalMachine\My |
 Select Subject, Thumbprint
 ```
 
-```
+```powershell
 Export-Certificate `
 -Cert "Cert:\LocalMachine\My\<Thumbprint>" `
 -FilePath "C:\rdp.cer"
+```
+
+Импорт
+PowerShell (admin)
+```powershell
+Import-Certificate `
+-FilePath "C:\rdp.cer" `
+-CertStoreLocation "Cert:\LocalMachine\Root"
 ```
 
 PowerShell (admin)
