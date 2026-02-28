@@ -1,0 +1,60 @@
+# win
+
+## RDP
+### Генерация сертификата
+
+
+PowerShell (admin)
+```powershell
+sertlm.msc
+
+$cert = New-SelfSignedCertificate `
+-DnsName "192.168.1.10" `
+-CertStoreLocation "Cert:\LocalMachine\My" `
+-KeyUsage DigitalSignature,KeyEncipherment `
+-Type SSLServerAuthentication
+
+# Для подключению по имени и IP заменить строчку ниже в команде выше
+# -DnsName "ENTER_IP_HERE","ENTER_NAME_HERE"
+
+Set-ItemProperty `
+-Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" `
+-Name SSLCertificateSHA1Hash `
+-Value $cert.Thumbprint
+
+Restart-Service TermService -Force
+```
+
+Для экспорта выполить команду и запомнить `Thumbprint`
+```powershell
+Get-ChildItem Cert:\LocalMachine\My | 
+Select Subject, Thumbprint
+```
+
+```
+Export-Certificate `
+-Cert "Cert:\LocalMachine\My\<Thumbprint>" `
+-FilePath "C:\rdp.cer"
+```
+
+PowerShell (admin)
+```powershell
+New-SelfSignedCertificate `
+-DnsName $env:COMPUTERNAME `
+-CertStoreLocation "Cert:\LocalMachine\My"
+
+$cert = Get-ChildItem Cert:\LocalMachine\My | Select-Object -First 1
+
+Set-ItemProperty `
+-Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" `
+-Name SSLCertificateSHA1Hash `
+-Value $cert.Thumbprint
+
+Restart-Service TermService -Force
+
+Export-Certificate `
+-Cert "Cert:\LocalMachine\My\$($cert.Thumbprint)" `
+-FilePath "C:\rdp.cer"
+```
+
+### 
