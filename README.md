@@ -36,7 +36,8 @@ powercfg.cpl
 
 Для вывода секунд нужно запустить в PowerShell с админскими правами эту команду
 ```powershell
-Set-ItemProperty -Path HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name ShowSecondsInSystemClock -Value 1 -Force
+Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name ShowSecondsInSystemClock -Value 1 -Type DWord
+Stop-Process -Name explorer -Force
 ```
 
 И следует перезагрузить комп
