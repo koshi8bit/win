@@ -40,7 +40,7 @@ Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer
 Stop-Process -Name explorer -Force
 ```
 
-И следует перезагрузить комп
+~~И следует перезагрузить комп~~
 
 
 ## RDP
