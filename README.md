@@ -41,6 +41,12 @@ powercfg.cpl
    Stop-Process -Name explorer -Force
    ```
 
+## Смена языка
+Для смены языка только по сочетанию клавиш `win`+`space` нужно выполнить команду в powershell
+```powershell
+$Path='HKCU:\Keyboard Layout\Toggle'; if(-not(Test-Path $Path)){New-Item -Path $Path -Force|Out-Null}; 'Language Hotkey','Hotkey','Layout Hotkey'|ForEach-Object{Set-ItemProperty -Path $Path -Name $_ -Value '3' -Type String}
+```
+
 ## RDP
 ### Генерация сертификата
 PowerShell (admin)
