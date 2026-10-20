@@ -106,6 +106,87 @@ exit /b %ERRORLEVEL%
 setup-ntp.bat 10.11.5.41
 ```
 
+## Samba
+
+### Настройка
+
+Для разрешения доступа без пароля нужно создать файл с кодировкой 866. Запускать из под админа.
+
+`samba-configure-without-pass.bat`
+
+```bat
+@echo off
+net session >nul 2>&1
+if errorlevel 1 (
+    echo Ошибка: запустите скрипт от имени администратора.
+    goto end
+)
+
+for /f "tokens=2 delims==" %%A in ('wmic useraccount where "LocalAccount=TRUE and SID like '%%-501'" get Name /value 2^>nul ^| find "="') do (
+    net user "%%A" /active:yes
+)
+
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v ForceGuest /t REG_DWORD /d 1 /f
+
+netsh advfirewall firewall add rule name="Guest SMB TCP 445" dir=in action=allow protocol=TCP localport=445 profile=private
+
+echo.
+echo Настройка гостевого SMB завершена.
+
+:end
+echo.
+pause
+```
+
+### Добавление папки без авторизации
+
+Для добавления папки доступной для общего пользования без пароля нужно создать файл с кодировкой 866. Запускать из под админа.
+
+`samba-add-to-everyone.bat "D:\home\koshi8bit\temp-lan"`
+
+```bat
+@echo off
+
+set "FOLDER=%~1"
+
+if not defined FOLDER (
+    echo Введите или вставьте путь к папке:
+    set /p "FOLDER=> "
+)
+
+set "FOLDER=%FOLDER:"=%"
+
+if not defined FOLDER (
+    echo Ошибка: путь не указан.
+    goto end
+)
+
+for %%A in ("%FOLDER%") do set "FOLDER=%%~fA"
+
+if not exist "%FOLDER%" (
+    echo Ошибка: папка не существует: "%FOLDER%"
+    goto end
+)
+
+for %%A in ("%FOLDER%") do set "SHARE_NAME=%%~nxA"
+
+net share "%SHARE_NAME%=%FOLDER%" /GRANT:Все,FULL
+
+if errorlevel 1 (
+    echo.
+    echo Ошибка создания SMB-ресурса.
+) else (
+    echo.
+    echo SMB-ресурс успешно создан!
+    echo \\%COMPUTERNAME%\%SHARE_NAME%
+)
+
+:end
+echo.
+pause
+```
+
+
 ## RDP
 ### Генерация сертификата
 PowerShell (admin)
