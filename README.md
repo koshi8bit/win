@@ -48,7 +48,7 @@ $Path='HKCU:\Keyboard Layout\Toggle'; if(-not(Test-Path $Path)){New-Item -Path $
 ```
 ## NTP
 Создаём `ntp-setup.bat`
-```cmd
+```bat
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
