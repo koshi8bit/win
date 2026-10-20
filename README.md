@@ -47,59 +47,72 @@ powercfg.cpl
 $Path='HKCU:\Keyboard Layout\Toggle'; if(-not(Test-Path $Path)){New-Item -Path $Path -Force|Out-Null}; 'Language Hotkey','Hotkey','Layout Hotkey'|ForEach-Object{Set-ItemProperty -Path $Path -Name $_ -Value '3' -Type String}
 ```
 ## NTP
-Создаём `setup-ntp.bat`
+Создаём `ntp-setup.bat`
 ```cmd
 @echo off
+setlocal EnableExtensions EnableDelayedExpansion
 
-:: Проверка наличия параметра с IP адресом
-if "%1"=="" (
+:: IP можно передать первым аргументом или ввести вручную.
+set "NTP_SERVER=%~1"
+
+:request_ip
+if not defined NTP_SERVER (
     echo.
-    echo ОШИБКА: Не указан IP адрес NTP сервера!
-    echo Использование: %~nx0 ^<IP_адрес_сервера^>
-    echo Пример: %~nx0 10.104.5.22
-    echo.
-    pause
-    exit /b 1
+    set /p "NTP_SERVER=Введите IPv4-адрес NTP-сервера: "
 )
 
-:: Сохраняем IP адрес из первого параметра
-set NTP_SERVER=%1
-
-:: Проверка формата IP адреса (простая проверка)
-echo %NTP_SERVER% | findstr /r "^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$" >nul
+call :validate_ip
 if errorlevel 1 (
     echo.
-    echo ОШИБКА: Некорректный формат IP адреса: %NTP_SERVER%
-    echo Пожалуйста, укажите IP адрес в формате xxx.xxx.xxx.xxx
+    echo ОШИБКА: Некорректный IPv4-адрес: !NTP_SERVER!
+    echo Требуется 4 числа от 0 до 255, разделенных точками.
+    echo Пример: 10.11.5.41
     echo.
-    pause
-    exit /b 1
+    set "NTP_SERVER="
+    goto request_ip
 )
 
-echo Настройка синхронизации времени с сервером: %NTP_SERVER%
+echo.
+echo Настройка синхронизации времени с сервером: !NTP_SERVER!
 echo.
 
-sc config w32time start=auto || goto error
+sc config w32time start= auto || goto error
 net start w32time
-w32tm /config /manualpeerlist:"%NTP_SERVER%" /syncfromflags:manual /update || goto error
+w32tm /config /manualpeerlist:"!NTP_SERVER!" /syncfromflags:manual /update || goto error
 net stop w32time || goto error
 net start w32time || goto error
 w32tm /resync || goto error
 
 echo.
 echo Сервер синхронизации времени (NTP) настроен успешно!
-echo Используется сервер: %NTP_SERVER%
+echo Используется сервер: !NTP_SERVER!
 pause
 exit /b 0
 
+:validate_ip
+:: Сначала проверяем строго формат из четырех десятичных групп.
+echo(!NTP_SERVER!| findstr /r "^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$" >nul
+if errorlevel 1 exit /b 1
+
+:: Затем проверяем каждый октет: 1-3 цифры, число не больше 255.
+for /f "tokens=1-4 delims=." %%A in ("!NTP_SERVER!") do (
+    for %%O in (%%A %%B %%C %%D) do (
+        set "octet=%%O"
+        if "!octet:~3,1!" neq "" exit /b 1
+        if !octet! GTR 255 exit /b 1
+    )
+)
+exit /b 0
+
 :error
+set "ERRCODE=!ERRORLEVEL!"
 echo.
 echo ОШИБКА: выполнение команды завершилось неуспешно.
-echo Код ошибки: %ERRORLEVEL%
+echo Код ошибки: !ERRCODE!
 echo Работа программы остановлена.
 echo.
 pause
-exit /b %ERRORLEVEL%
+exit /b !ERRCODE!
 ```
 
 ```
