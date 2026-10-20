@@ -46,6 +46,65 @@ powercfg.cpl
 ```powershell
 $Path='HKCU:\Keyboard Layout\Toggle'; if(-not(Test-Path $Path)){New-Item -Path $Path -Force|Out-Null}; 'Language Hotkey','Hotkey','Layout Hotkey'|ForEach-Object{Set-ItemProperty -Path $Path -Name $_ -Value '3' -Type String}
 ```
+## NTP
+Создаём `setup-ntp.bat`
+```cmd
+@echo off
+
+:: Проверка наличия параметра с IP адресом
+if "%1"=="" (
+    echo.
+    echo ОШИБКА: Не указан IP адрес NTP сервера!
+    echo Использование: %~nx0 ^<IP_адрес_сервера^>
+    echo Пример: %~nx0 10.104.5.22
+    echo.
+    pause
+    exit /b 1
+)
+
+:: Сохраняем IP адрес из первого параметра
+set NTP_SERVER=%1
+
+:: Проверка формата IP адреса (простая проверка)
+echo %NTP_SERVER% | findstr /r "^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$" >nul
+if errorlevel 1 (
+    echo.
+    echo ОШИБКА: Некорректный формат IP адреса: %NTP_SERVER%
+    echo Пожалуйста, укажите IP адрес в формате xxx.xxx.xxx.xxx
+    echo.
+    pause
+    exit /b 1
+)
+
+echo Настройка синхронизации времени с сервером: %NTP_SERVER%
+echo.
+
+sc config w32time start=auto || goto error
+net start w32time
+w32tm /config /manualpeerlist:"%NTP_SERVER%" /syncfromflags:manual /update || goto error
+net stop w32time || goto error
+net start w32time || goto error
+w32tm /resync || goto error
+
+echo.
+echo Сервер синхронизации времени (NTP) настроен успешно!
+echo Используется сервер: %NTP_SERVER%
+pause
+exit /b 0
+
+:error
+echo.
+echo ОШИБКА: выполнение команды завершилось неуспешно.
+echo Код ошибки: %ERRORLEVEL%
+echo Работа программы остановлена.
+echo.
+pause
+exit /b %ERRORLEVEL%
+```
+
+```
+setup-ntp.bat 10.11.5.41
+```
 
 ## RDP
 ### Генерация сертификата
